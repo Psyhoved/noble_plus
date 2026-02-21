@@ -1,188 +1,65 @@
-# TODO: Исправление сценария noble_plus_scenario (Этап 3.1)
+# TODO: Этап 3.3 — Стартовое событие (Пролог)
 
 ## Контекст для агента
 
-Читай этот файл вместе с README.md, TECH.md, JOURNAL.md и ROADMAP.md из этой папки.
+Читай этот файл вместе с PLAN_stage_3_3_prologue.md, NARRATIVE.md, TECH.md и ROADMAP.md.
 
-Мод загружается без ошибок. Класс `noble_plus_scenario` создаётся (подтверждено логом).
-Но при выборе происхождения видна пустая строка вместо названия, а запуск кампании
-вызывает бесконечную загрузку карты мира. Ниже — диагноз и пошаговый план исправления.
+Этапы 3.1 (скелет сценария) и 3.2 (стартовый отряд) выполнены и закоммичены.
+Этап 3.3 реализован: файл события создан, scheduleEvent добавлен в сценарий.
 
-Файл сценария находится здесь:
-`D:\SteamLibrary\steamapps\common\Battle Brothers\data\scripts\scenarios\world\noble_plus_scenario.nut`
-
-Образец для подражания — `legends_noble_scenario.nut` из архива Легенд.
-Он уже распакован в `/tmp/msu_check/scripts/scenarios/world/legends_noble_scenario.nut`
-и является наиболее близким к нашему по структуре полностью рабочим сценарием.
+**Осталось: запустить игру и подтвердить корректную работу.**
 
 ---
 
-## Диагноз двух багов
+## Что сделано в этапе 3.3
 
-**Баг 1 — пустое название.** Наш `create()` вызывает `this.starting_scenario.create()`.
-Ни один сценарий Легенд так не делает — они выставляют поля `m` напрямую.
-Ванильный `starting_scenario.create()` сбрасывает поля к дефолтам, перезаписывая
-наши значения `m.Name`, `m.Description` и т.д. В итоге название остаётся пустым.
+| Файл | Действие |
+|------|---------|
+| `scripts/events/events/noble_plus/noble_plus_intro_event.nut` | Создан (новый файл) |
+| `scripts/scenarios/world/noble_plus_scenario.nut` | Добавлен `scheduleEvent` в `onSpawnPlayer()` |
 
-**Баг 2 — бесконечная загрузка.** В сценарии отсутствует метод `onSpawnPlayer()`.
-Именно он размещает отряд игрока на карте мира через вызов `World.spawnEntity(...)`.
-Без него генерация мира завершается, но игрок никогда не появляется на карте —
-движок входит в бесконечный цикл ожидания.
-
----
-
-## Пошаговый план исправления
-
-Все шаги реализуются в одном файле `noble_plus_scenario.nut`.
-После каждого шага — перезапуск игры и проверка лога через `read_game_log(only_squirrel=true)`.
-
-### Шаг 1 — Исправить `create()` [исправляет Баг 1]
-
-Убрать вызов `this.starting_scenario.create()` полностью.
-Выставить все поля напрямую, как это делает `legends_noble_scenario`.
-Обязательные поля:
-
-```squirrel
-this.m.ID = "scenario.noble_plus";
-this.m.Name = "Дворянин +";
-this.m.Description = "..."; // BBCode-текст
-this.m.Difficulty = 2;
-this.m.Order = 171;         // чуть выше чем у legends_noble (170), чтобы стоять рядом
-this.m.IsFixedLook = true;
-this.m.StartingRosterTier = this.Const.Roster.getTierForSize(3);
-this.m.StartingBusinessReputation = 1000;
-this.setRosterReputationTiers(this.Const.Roster.createReputationTiers(this.m.StartingBusinessReputation));
-```
-
-Критерий успеха: название "Дворянин +" видно в меню выбора происхождений,
-картинка и описание отображаются корректно.
-
-### Шаг 2 — Добавить `onInit()` [стабильность]
-
-Легенды патчат `starting_scenario` и добавляют в него поля через хук.
-`onInit` инициализирует эти структуры в рантайме. Все рабочие сценарии Легенд
-реализуют его. Без него могут не инициализироваться внутренние данные.
-
-```squirrel
-function onInit()
-{
-    this.starting_scenario.onInit();
-}
-```
-
-### Шаг 3 — Добавить минимальный `onSpawnAssets()` [нужен для Шага 4]
-
-Создаём одного персонажа — дворянина — чтобы ростер не был пустым
-во время выполнения `onSpawnPlayer`. Полный стартовый состав (слуга, волк)
-реализуется в Этапе 3.2, здесь нужен только минимум.
-
-```squirrel
-function onSpawnAssets()
-{
-    local roster = this.World.getPlayerRoster();
-    local bro = roster.create("scripts/entity/tactical/player");
-    bro.setStartValuesEx(["disowned_noble_background"], false);
-    bro.getFlags().set("IsPlayerCharacter", true);
-    ::Legends.Traits.grant(bro, ::Legends.Trait.Player);
-    bro.setPlaceInFormation(13);
-    this.World.Assets.addBusinessReputation(this.m.StartingBusinessReputation);
-}
-```
-
-### Шаг 4 — Добавить `onSpawnPlayer()` [исправляет Баг 2]
-
-Спавним отряд рядом с военным поселением (замком) — так же как `legends_noble_scenario`.
-Три обязательных вызова: найти тайл, вызвать `spawnEntity`, поставить камеру.
-
-НЕ копировать из `legends_noble_scenario` строки про `setFaction(banner)` и
-`brothers[1].getItems()...` — они рассчитаны на 6 персонажей и упадут у нас.
-НЕ вызывать событие `event.legend_noble_scenario_intro` — оно не наше.
-
-```squirrel
-function onSpawnPlayer()
-{
-    local randomVillage;
-
-    for (local i = 0; i != this.World.EntityManager.getSettlements().len(); i = ++i)
-    {
-        randomVillage = this.World.EntityManager.getSettlements()[i];
-        if (randomVillage.isMilitary() && !randomVillage.isIsolatedFromRoads())
-            break;
-    }
-
-    local randomVillageTile = randomVillage.getTile();
-    local navSettings = this.World.getNavigator().createSettings();
-    navSettings.ActionPointCosts = this.Const.World.TerrainTypeNavCost_Flat;
-
-    do
-    {
-        local x = this.Math.rand(this.Math.max(2, randomVillageTile.SquareCoords.X - 7), this.Math.min(this.Const.World.Settings.SizeX - 2, randomVillageTile.SquareCoords.X + 7));
-        local y = this.Math.rand(this.Math.max(2, randomVillageTile.SquareCoords.Y - 7), this.Math.min(this.Const.World.Settings.SizeY - 2, randomVillageTile.SquareCoords.Y + 7));
-
-        if (!this.World.isValidTileSquare(x, y)) {}
-        else
-        {
-            local tile = this.World.getTileSquare(x, y);
-            if (tile.Type == this.Const.World.TerrainType.Ocean || tile.Type == this.Const.World.TerrainType.Shore || tile.IsOccupied) {}
-            else if (tile.getDistanceTo(randomVillageTile) <= 4) {}
-            else if (!tile.HasRoad) {}
-            else
-            {
-                local path = this.World.getNavigator().findPath(tile, randomVillageTile, navSettings, 0);
-                if (!path.isEmpty())
-                {
-                    randomVillageTile = tile;
-                    break;
-                }
-            }
-        }
-    }
-    while (1);
-
-    this.World.State.m.Player = this.World.spawnEntity("scripts/entity/world/player_party", randomVillageTile.Coords.X, randomVillageTile.Coords.Y);
-    this.World.Assets.updateLook(101); // 101 = внешний вид отряда дворянина, как в legends_noble
-    this.World.getCamera().setPos(this.World.State.m.Player.getPos());
-}
-```
-
-Критерий успеха: кампания запускается, отряд появляется на карте мира рядом с замком.
-
-### Шаг 5 — Добавить `onCombatFinished()` [механика game-over]
-
-Паттерн полностью из `legends_noble_scenario`, уже задокументирован в TECH.md.
-
-```squirrel
-function onCombatFinished()
-{
-    local roster = this.World.getPlayerRoster().getAll();
-    foreach (bro in roster)
-    {
-        if (bro.getFlags().get("IsPlayerCharacter"))
-            return true;
-    }
-    return false;
-}
-```
-
-### Шаг 6 — Добавить заглушки `onHiredByScenario()` и `onUpdateHiringRoster()`
-
-Легенды добавляют эти методы к `starting_scenario` через хук. Явные заглушки
-в нашем классе защищают от непредсказуемого поведения, если Легенды изменят
-реализацию базового класса в будущей версии.
-
-```squirrel
-function onHiredByScenario(_bro) {}
-function onUpdateHiringRoster(_roster) {}
-```
+**Ключевые детали:**
+- Событие наследует `"scripts/events/event"` (паттерн из `legend_noble_intro_event`)
+- `this.m.IsSpecial = true` — событие не попадает в общий пул
+- Структура `m.Screens` с одним экраном (ID = "A")
+- Картинка встроена в `Text` через тег `[img]gfx/ui/events/event_176.png[/img]`
+- Авто-сканирование: файл в `scripts/events/events/` подхватывается движком без явного `::include`
+- Вызов: `this.World.Events.fire("event.noble_plus_intro")` через `scheduleEvent(Real, 1000ms)`
 
 ---
 
-## Критерий завершения Этапа 3.1
+## Проверка (end-to-end тест)
 
-Этап считается выполненным когда выполнены все три пункта одновременно:
-в логе нет ошибок уровня ERROR с тегом SQ после запуска игры,
-в меню выбора происхождений отображается "Дворянин +" с правильным текстом и картинкой,
-запуск кампании приводит к появлению отряда на карте мира без зависания.
+1. Запустить игру: `mcp__battle_brothers__launch_game()`
+2. Выбрать "Дворянин +", стартовать кампанию
+3. **Ожидаемый результат:** через ~1 секунду после появления на карте —
+   окно события с картинкой `event_176.png` и текстом пролога
+4. Проверить лог: `mcp__battle_brothers__read_game_log(only_squirrel=true)`
+5. Нажать "Вперёд." — событие закрывается, игра продолжается
 
-После завершения: обновить ROADMAP.md (Этап 3.1 → DONE, Этап 3.2 → СЛЕДУЮЩИЙ ШАГ)
-и добавить запись в JOURNAL.md.
+---
+
+## Критерий завершения этапа 3.3
+
+- Событие показывается при старте новой игры ровно один раз
+- Текст, картинка и кнопка отображаются корректно
+- В логе нет SQ-ошибок
+- После закрытия события игра работает нормально
+
+После успешного теста:
+- Обновить ROADMAP.md (Этап 3.3 → ✅ DONE, Этап 3.4 → СЛЕДУЮЩИЙ ШАГ)
+- Добавить запись в JOURNAL.md
+- Сделать коммит
+
+---
+
+## Если событие не отображается (диагностика)
+
+**Проверить 1:** Нет ли ошибки `class not found` или `cannot inherit` в логе.
+Причина: неверный базовый класс или опечатка в пути `"scripts/events/event"`.
+
+**Проверить 2:** Нет ли ошибки `event.noble_plus_intro does not exist` в логе.
+Причина: файл не подхватился авто-сканером. Решение — добавить явный `::include` в `mod_noble_plus.nut`.
+
+**Проверить 3:** Отображается ли событие вообще (без картинки/текста).
+Причина: проблема с форматом `m.Screens`. Сверить структуру с `legend_noble_intro_event.nut`.

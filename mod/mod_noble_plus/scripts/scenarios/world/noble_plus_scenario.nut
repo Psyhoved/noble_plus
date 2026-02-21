@@ -332,6 +332,12 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
                 ::logInfo("[NoblePlus] onSpawnPlayer: no noble faction found near village, skipping banner");
             }
 
+            // Пролог — показываем через 1 секунду после появления на карте
+            this.Time.scheduleEvent(this.TimeUnit.Real, 1000, function ( _tag )
+            {
+                this.World.Events.fire("event.noble_plus_intro");
+            }, null);
+
             ::logInfo("[NoblePlus] onSpawnPlayer: DONE");
         }
         catch (e)
