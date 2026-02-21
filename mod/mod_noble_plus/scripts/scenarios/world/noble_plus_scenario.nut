@@ -76,6 +76,11 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
             ::Legends.Effects.grant(bros[0], ::Legends.Effect.Drunk);
             this.addScenarioPerk(bros[0].getBackground(), this.Const.Perks.PerkDefs.Rotation);
             this.addScenarioPerk(bros[0].getBackground(), this.Const.Perks.PerkDefs.RallyTheTroops);
+            // Лютоволк — родовой зверь дворянина
+            local wolf = this.new("scripts/items/accessory/legend_white_wolf_item");
+            wolf.m.Name = "Лютоволк";
+            bros[0].getItems().equip(wolf);
+            ::logInfo("[NoblePlus] onSpawnAssets: wolf equipped");
             ::logInfo("[NoblePlus] onSpawnAssets: bros[0] (commander) OK");
 
             // ------------------------------------------------------------------
@@ -153,6 +158,9 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
             items4.equip(this.Const.World.Common.pickHelmet([[1, "feathered_hat"]]));
             items4.equip(this.new("scripts/items/supplies/legend_pudding_item"));
             items4.addToBag(this.new("scripts/items/supplies/wine_item"));
+            // Кинжал — слуга не безоружен
+            items4.equip(this.new("scripts/items/weapons/dagger.nut"));
+            ::logInfo("[NoblePlus] onSpawnAssets: servant dagger equipped");
             ::logInfo("[NoblePlus] onSpawnAssets: bros[4] (servant) OK");
 
             // ------------------------------------------------------------------

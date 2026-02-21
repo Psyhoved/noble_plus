@@ -175,18 +175,22 @@ accessory (базовый класс предметов)
 
 Ключевая механика: когда хозяин погибает в бою (`onActorDied`), животное автоматически материализуется на поле боя рядом с трупом. У живого хозяина есть активный скилл для ручного выпуска животного в свой ход.
 
-**Белый волк** (`legend_white_wolf_item`):
+**Белый волк / Лютоволк** (`legend_white_wolf_item`):
 - ID: `accessory.legend_white_warwolf`
 - Энтити в бою: `scripts/entity/tactical/legend_white_warwolf`
 - Активный скилл выпуска: `::Legends.Active.LegendUnleashWhiteWolf`
 - Стоимость: 6000 золота
 - Файл предмета: `scripts/items/accessory/legend_white_wolf_item.nut`
+- Имя по умолчанию: `"<случайное из WardogNames>, белый волк"` (например "Клык, белый волк")
 
-Чтобы выдать персонажу белого волка в сценарии:
+Чтобы выдать персонажу волка с кастомным именем:
 ```squirrel
 local wolf = this.new("scripts/items/accessory/legend_white_wolf_item");
+wolf.m.Name = "Лютоволк"; // переопределяет случайное имя
 bro.getItems().equip(wolf);
 ```
+
+**Важно:** поля `m` предмета доступны напрямую после `this.new()` — никаких хуков не нужно.
 
 ### Механика game over при гибели персонажа (из Lone Wolf)
 
