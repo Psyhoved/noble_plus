@@ -152,6 +152,56 @@ this.my_scenario <- this.inherit("scripts/scenarios/world/starting_scenario", {
 
 ---
 
+## Установка кастомной предыстории персонажа — единственно надёжный паттерн
+
+**Проблема**: прямое присвоение `bro.getBackground().m.Description = "..."` не работает — движок BB
+вызывает `buildDescription()` ПОСЛЕ `onSpawnAssets()` и перетирает значение.
+
+**Попытка #2 — `onBuildDescription` хук** не сработала по трём причинам:
+1. Оператор `=` вместо `<-` при добавлении метода в хуке (`=` требует существующий слот, `<-` создаёт)
+2. `_origBuild()` вызывается без привязки контекста → крэш на `this.m` у других персонажей (`bindenv(this)` обязателен)
+3. Класс `legend_noble_commander_background` вообще не имеет метода `onBuildDescription` — хуковать нечего
+
+**Правильный паттерн** — `m.RawDescription` + `buildDescription(true)`:
+
+```squirrel
+// В onSpawnAssets(), ПОСЛЕ setStartValuesEx():
+bro.getBackground().m.RawDescription = "Твой текст предыстории. Поддерживает %name% для имени.";
+bro.getBackground().buildDescription(true);
+```
+
+Этот паттерн используется в Легендах для ВСЕХ персонажей с кастомным текстом в сценариях.
+`true` = принудительная пересборка даже если описание уже было построено.
+
+---
+
+## Структура файлов мода: data/scripts/ vs data/mod_name/scripts/
+
+В Battle Brothers виртуальная ФС объединяет несколько источников. При одинаковых путях
+**`data/scripts/` имеет приоритет** над `data/mod_name/scripts/`.
+
+**Текущая dev-структура Noble Plus:**
+
+```
+data/ (D:\SteamLibrary\steamapps\common\Battle Brothers\data\)
+├── scripts/
+│   ├── !mods_preload/
+│   │   └── mod_noble_plus.nut        ← АКТИВНЫЙ файл (игра читает отсюда)
+│   └── scenarios/world/
+│       └── noble_plus_scenario.nut   ← АКТИВНЫЙ файл
+└── mod_noble_plus -> /d/Projects/noble_plus/mod/mod_noble_plus  ← симлинк (git-репозиторий)
+```
+
+**Источник истины для git** = `/d/Projects/noble_plus/mod/mod_noble_plus/scripts/`.
+
+Рабочий процесс: после правок в `mod/` — синхронизировать в `data/scripts/` через `cp`.
+Или: править `data/scripts/` напрямую, затем копировать обратно в `mod/` перед коммитом.
+
+> **Урок**: если правки не появляются в игре — всегда проверять, из КАКОГО файла игра реально
+> грузит код. Лог-сообщения в коде (`::logInfo`) — единственный надёжный способ это проверить.
+
+---
+
 ## MSU Settings API — статус: требует уточнения
 
 При попытке использовать `::NoblePlus.Mod.Settings` для добавления панели настроек мода получена ошибка: `the index 'Settings' does not exist`. Это означает что либо API называется иначе в версии MSU 1.7.2, либо нужна дополнительная инициализация. Нужно изучить исходники MSU на GitHub (https://github.com/MSUTeam/MSU) или посмотреть как настройки добавлены в других модах из установленного набора.

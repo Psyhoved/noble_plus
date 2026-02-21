@@ -21,8 +21,8 @@
 {
     ::NoblePlus.Mod <- ::MSU.Class.Mod(::NoblePlus.ID, ::NoblePlus.Version, ::NoblePlus.Name);
 
-    // Подключаем тестовые настройки
-    ::include("mod_noble_plus/settings/mod_settings.nut");
+    // TODO: настройки отключены до исправления MSU Settings API
+    // ::include("mod_noble_plus/settings/mod_settings.nut");
 
     // Логируем успешный запуск — увидим в read_game_log(only_squirrel=true)
     ::logInfo("Noble Plus " + ::NoblePlus.Version + " загружен.");
