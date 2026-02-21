@@ -1,0 +1,10 @@
+# Claude Desktop project settings (private)
+docs/.claude/
+
+# PLAN-файлы (черновики, не нужны в репо)
+docs/PLAN_*.md
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
