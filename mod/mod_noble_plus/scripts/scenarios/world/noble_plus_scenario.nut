@@ -34,7 +34,9 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
             "вернуть себе имя, честь и замок.\n\n" +
             "[color=#bcad8c]Родовой зверь:[/color] Дворянин начинает с легендарным " +
             "белым волком в качестве спутника. Волк может быть выпущен в бою.\n" +
-            "[color=#bcad8c]Слуга:[/color] Верный слуга начинает вооружённым кинжалом.\n" +
+            "[color=#bcad8c]Верный слуга:[/color] Старик Харлан бормочет молитвы, " +
+            "швыряет камни из пращи метче многих наёмных стрелков и держит " +
+            "в суме старый кинжал на случай, если мир опять подберётся вплотную.\n" +
             "[color=#c90000]Честь дворянина:[/color] Если дворянин погибнет — " +
             "игра окончена.[/p]";
     }
@@ -159,22 +161,24 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
             // bros[4] — Слуга
             // ------------------------------------------------------------------
             bros[4].setStartValuesEx(["servant_background"], false);
-            bros[4].getBackground().m.RawDescription = "%name% был слугой в вашей семье уже пять поколений, непонятно, как можно было выжить так долго, но не видно никаких признаков того, что старый болван сдастся в ближайшее время.";
+            bros[4].getBackground().m.RawDescription = "%name% пережил трёх лордов, пять осад и одну особенно скверную свадьбу, после которой от стола остались только кости и долги. Он клянётся, что в юности охотился пращой на волков, и, к удивлению всех, иногда даже попадает. Когда камни заканчиваются, в его суме всегда ждёт старый кинжал — ржавый, но честный, как сам %name%.";
             bros[4].getBackground().buildDescription(true);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Old);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Loyal);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Lucky);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Survivor);
             this.addScenarioPerk(bros[4].getBackground(), this.Const.Perks.PerkDefs.Rotation);
+            if (bros[4].getBaseProperties().RangedSkill <= 42)
+                bros[4].getBaseProperties().RangedSkill += 8;
             bros[4].setPlaceInFormation(12);
             local items4 = bros[4].getItems();
             items4.equip(this.Const.World.Common.pickArmor([[1, "linen_tunic"]]));
             items4.equip(this.Const.World.Common.pickHelmet([[1, "feathered_hat"]]));
             items4.equip(this.new("scripts/items/supplies/legend_pudding_item"));
             items4.addToBag(this.new("scripts/items/supplies/wine_item"));
-            // Кинжал — слуга не безоружен
-            items4.equip(this.new("scripts/items/weapons/dagger.nut"));
-            ::logInfo("[NoblePlus] onSpawnAssets: servant dagger equipped");
+            items4.equip(this.new("scripts/items/weapons/sling.nut"));
+            items4.addToBag(this.new("scripts/items/weapons/dagger.nut"));
+            ::logInfo("[NoblePlus] onSpawnAssets: servant sling equipped, dagger in bag");
             ::logInfo("[NoblePlus] onSpawnAssets: bros[4] (servant) OK");
 
             // ------------------------------------------------------------------
