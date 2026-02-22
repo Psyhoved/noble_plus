@@ -9,13 +9,14 @@
 // Прогресс: текущая известность / 500
 // Завершение: известность >= 500
 //
-// ВАЖНО: текстовые поля инициализируются в m = {}, а не в create(),
-// потому что движок может не вызвать create() до показа экрана выбора амбиции.
+// ПОЛЯ ОТОБРАЖЕНИЯ:
+//   ButtonText — текст на карточке в экране выбора амбиции (читается Legends UI)
+//   UIText     — краткий текст в топбаре (читается ambition_manager)
 
 this.noble_plus_find_allies_ambition <- this.inherit("scripts/ambitions/ambition", {
     m = {
         ID              = "ambition.noble_plus.find_allies",
-        Name            = "Заявить о себе",
+        ButtonText      = "Завоюй 500 очков известности — чтобы о тебе узнали нужные люди.",
         UIText          = "Завоюй 500 очков известности — чтобы о тебе узнали нужные люди.",
         TooltipText     =
             "В одиночку замок не взять. Твоё имя должно звучать достаточно громко, " +
@@ -38,9 +39,9 @@ this.noble_plus_find_allies_ambition <- this.inherit("scripts/ambitions/ambition
     function create()
     {
         this.ambition.create();
-        // Повторно задаём поля на случай, если this.ambition.create() сбросил m
+        // Задаём поля после вызова родителя — он может сбросить m.
         this.m.ID               = "ambition.noble_plus.find_allies";
-        this.m.Name             = "Заявить о себе";
+        this.m.ButtonText       = "Завоюй 500 очков известности — чтобы о тебе узнали нужные люди.";
         this.m.UIText           = "Завоюй 500 очков известности — чтобы о тебе узнали нужные люди.";
         this.m.TooltipText      =
             "В одиночку замок не взять. Твоё имя должно звучать достаточно громко, " +
@@ -70,16 +71,22 @@ this.noble_plus_find_allies_ambition <- this.inherit("scripts/ambitions/ambition
 
         local rep = this.World.Assets.getBusinessReputation();
 
+        // Score 9999: амбиция всегда доминирует пул — ванильные (Score 30–90) не конкурируют
+        this.m.Score = 9999;
+
         if (rep >= 500)
         {
             this.m.IsDone = true;
-            this.m.Score  = 100;
             this.World.Flags.set("NoblePlus.Stage.FindAllies.Done", true);
-            return;
+            ::NoblePlus.tryFireChapterComplete(
+                ["NoblePlus.Stage.HireSoldiers.Done",
+                 "NoblePlus.Stage.EarnGold.Done",
+                 "NoblePlus.Stage.FindAllies.Done",
+                 "NoblePlus.Stage.OwnBanner.Done"],
+                "NoblePlus.Chapter1.Complete",
+                "event.noble_plus_chapter1_complete"
+            );
         }
-
-        // Прогрессивный score: base 30 гарантирует видимость в пуле даже при 0 известности
-        this.m.Score = this.Math.min(90, (rep / 500.0 * 80).tointeger() + 30);
     }
 
     function getList()

@@ -8,13 +8,15 @@
 // Прогресс: текущий размер отряда / 8
 // Завершение: в отряде 8+ бойцов (включая дворянина)
 //
-// ВАЖНО: текстовые поля инициализируются в m = {}, а не в create(),
-// потому что движок может не вызвать create() до показа экрана выбора амбиции.
+// ПОЛЯ ОТОБРАЖЕНИЯ:
+//   ButtonText — текст на карточке в экране выбора амбиции (читается Legends UI)
+//   UIText     — краткий текст в топбаре (читается ambition_manager)
+//   Name       — не является стандартным полем базового класса, не используется
 
 this.noble_plus_hire_soldiers_ambition <- this.inherit("scripts/ambitions/ambition", {
     m = {
         ID              = "ambition.noble_plus.hire_soldiers",
-        Name            = "Собрать отряд",
+        ButtonText      = "Собери под знамя Дома Локвуд хотя бы 8 бойцов.",
         UIText          = "Собери под знамя Дома Локвуд хотя бы 8 бойцов.",
         TooltipText     =
             "Тебе нужна армия. Без неё ты — просто беглец с мечом.\n\n" +
@@ -35,9 +37,10 @@ this.noble_plus_hire_soldiers_ambition <- this.inherit("scripts/ambitions/ambiti
     function create()
     {
         this.ambition.create();
-        // Повторно задаём поля на случай, если this.ambition.create() сбросил m
+        // Задаём поля после вызова родителя — он может сбросить m.
+        // Используем = (а не <-): базовый класс создаёт стандартные слоты в create().
         this.m.ID               = "ambition.noble_plus.hire_soldiers";
-        this.m.Name             = "Собрать отряд";
+        this.m.ButtonText       = "Собери под знамя Дома Локвуд хотя бы 8 бойцов.";
         this.m.UIText           = "Собери под знамя Дома Локвуд хотя бы 8 бойцов.";
         this.m.TooltipText      =
             "Тебе нужна армия. Без неё ты — просто беглец с мечом.\n\n" +
@@ -65,16 +68,22 @@ this.noble_plus_hire_soldiers_ambition <- this.inherit("scripts/ambitions/ambiti
 
         local rosterSize = this.World.getPlayerRoster().getAll().len();
 
+        // Score 9999: амбиция всегда доминирует пул — ванильные (Score 30–90) не конкурируют
+        this.m.Score = 9999;
+
         if (rosterSize >= 8)
         {
             this.m.IsDone = true;
-            this.m.Score  = 100;
             this.World.Flags.set("NoblePlus.Stage.HireSoldiers.Done", true);
-            return;
+            ::NoblePlus.tryFireChapterComplete(
+                ["NoblePlus.Stage.HireSoldiers.Done",
+                 "NoblePlus.Stage.EarnGold.Done",
+                 "NoblePlus.Stage.FindAllies.Done",
+                 "NoblePlus.Stage.OwnBanner.Done"],
+                "NoblePlus.Chapter1.Complete",
+                "event.noble_plus_chapter1_complete"
+            );
         }
-
-        // Прогрессивный score: чем больше бойцов, тем выше приоритет в UI
-        this.m.Score = rosterSize * 12 + 5;
     }
 
     function getList()

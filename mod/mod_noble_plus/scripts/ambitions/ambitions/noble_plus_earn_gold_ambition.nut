@@ -8,13 +8,14 @@
 // Прогресс: текущее золото / 2000
 // Завершение: World.Assets.getMoney() >= 2000
 //
-// ВАЖНО: текстовые поля инициализируются в m = {}, а не в create(),
-// потому что движок может не вызвать create() до показа экрана выбора амбиции.
+// ПОЛЯ ОТОБРАЖЕНИЯ:
+//   ButtonText — текст на карточке в экране выбора амбиции (читается Legends UI)
+//   UIText     — краткий текст в топбаре (читается ambition_manager)
 
 this.noble_plus_earn_gold_ambition <- this.inherit("scripts/ambitions/ambition", {
     m = {
         ID              = "ambition.noble_plus.earn_gold",
-        Name            = "Наполнить казну",
+        ButtonText      = "Накопи 2000 золотых крон для подготовки к осаде.",
         UIText          = "Накопи 2000 золотых крон для подготовки к осаде.",
         TooltipText     =
             "Армия стоит дорого. Замок стоит ещё дороже.\n\n" +
@@ -36,9 +37,9 @@ this.noble_plus_earn_gold_ambition <- this.inherit("scripts/ambitions/ambition",
     function create()
     {
         this.ambition.create();
-        // Повторно задаём поля на случай, если this.ambition.create() сбросил m
+        // Задаём поля после вызова родителя — он может сбросить m.
         this.m.ID               = "ambition.noble_plus.earn_gold";
-        this.m.Name             = "Наполнить казну";
+        this.m.ButtonText       = "Накопи 2000 золотых крон для подготовки к осаде.";
         this.m.UIText           = "Накопи 2000 золотых крон для подготовки к осаде.";
         this.m.TooltipText      =
             "Армия стоит дорого. Замок стоит ещё дороже.\n\n" +
@@ -67,16 +68,22 @@ this.noble_plus_earn_gold_ambition <- this.inherit("scripts/ambitions/ambition",
 
         local gold = this.World.Assets.getMoney();
 
+        // Score 9999: амбиция всегда доминирует пул — ванильные (Score 30–90) не конкурируют
+        this.m.Score = 9999;
+
         if (gold >= 2000)
         {
             this.m.IsDone = true;
-            this.m.Score  = 100;
             this.World.Flags.set("NoblePlus.Stage.EarnGold.Done", true);
-            return;
+            ::NoblePlus.tryFireChapterComplete(
+                ["NoblePlus.Stage.HireSoldiers.Done",
+                 "NoblePlus.Stage.EarnGold.Done",
+                 "NoblePlus.Stage.FindAllies.Done",
+                 "NoblePlus.Stage.OwnBanner.Done"],
+                "NoblePlus.Chapter1.Complete",
+                "event.noble_plus_chapter1_complete"
+            );
         }
-
-        // Прогрессивный score: base 30 гарантирует видимость в пуле даже при 0 золоте
-        this.m.Score = this.Math.min(90, (gold / 2000.0 * 80).tointeger() + 30);
     }
 
     function getList()

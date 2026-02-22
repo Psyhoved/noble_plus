@@ -35,20 +35,41 @@
     {
         origUpdateScore();
 
-        // Для сценария Noble Plus — задаём UIText с нашим нарративным контекстом.
-        // Делается здесь (не в create()), чтобы гарантированно применяться
-        // до показа экрана выбора амбиции.
         if (this.World.Assets.getOrigin().getID() == "scenario.noble_plus")
         {
-            this.m.UIText = "Знамя Дома Локвуд похищено узурпатором. Закажи собственный штандарт — 2000 крон.";
-        }
+            // Score 9999: амбиция всегда доминирует пул — ванильные не конкурируют
+            this.m.Score = 9999;
 
-        // При завершении амбиции для Noble Plus — ставим флаг Главы I
-        if (this.m.IsDone &&
-            this.World.Assets.getOrigin().getID() == "scenario.noble_plus" &&
-            !this.World.Flags.has("NoblePlus.Stage.OwnBanner.Done"))
-        {
-            this.World.Flags.set("NoblePlus.Stage.OwnBanner.Done", true);
+            // Нарративный текст для карточки выбора и топбара
+            local text = "Знамя Дома Локвуд похищено узурпатором. Закажи собственный штандарт — 2000 крон.";
+            this.m.UIText     = text;
+            this.m.ButtonText = text;
+
+            // Нарративный текст экрана завершения (вместо ванильного про "кровожадное отребьё")
+            this.m.SuccessText =
+                "[img]gfx/ui/events/event_176.png[/img]\n\n" +
+                "Новое знамя Дома Локвуд — не роскошь. Это объявление войны.\n\n" +
+                "Вышивальщица из Торгенхейма работала три недели. На полотне — серебряный волк " +
+                "на чёрном поле, без щита и без цепей. Тот самый зверь, что украшал знамя отца. " +
+                "Тот, что узурпатор присвоил себе.\n\n" +
+                "Когда стяг взвился над лагерем впервые, никто не произнёс ни слова. " +
+                "Люди смотрели на него и понимали: это уже не просто наёмный отряд.\n\n" +
+                "[color=#bcad8c]Это армия претендента.[/color]";
+            this.m.SuccessButtonText = "К делу.";
+
+            // При завершении — ставим флаг Главы I и проверяем завершение главы
+            if (this.m.IsDone && !this.World.Flags.has("NoblePlus.Stage.OwnBanner.Done"))
+            {
+                this.World.Flags.set("NoblePlus.Stage.OwnBanner.Done", true);
+                ::NoblePlus.tryFireChapterComplete(
+                    ["NoblePlus.Stage.HireSoldiers.Done",
+                     "NoblePlus.Stage.EarnGold.Done",
+                     "NoblePlus.Stage.FindAllies.Done",
+                     "NoblePlus.Stage.OwnBanner.Done"],
+                    "NoblePlus.Chapter1.Complete",
+                    "event.noble_plus_chapter1_complete"
+                );
+            }
         }
     };
 });
