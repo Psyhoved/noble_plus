@@ -176,9 +176,26 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
             items4.equip(this.Const.World.Common.pickHelmet([[1, "feathered_hat"]]));
             items4.equip(this.new("scripts/items/supplies/legend_pudding_item"));
             items4.addToBag(this.new("scripts/items/supplies/wine_item"));
-            items4.equip(this.new("scripts/items/weapons/sling.nut"));
+
+            // В некоторых сборках/версиях модов путь пращи может отличаться.
+            // Пробуем сначала ванильный script id, затем Legends-вариант.
+            local slingScript = "scripts/items/weapons/sling.nut";
+            if (!::IO.fileExists(slingScript) && ::IO.fileExists("scripts/items/weapons/legend_sling.nut"))
+                slingScript = "scripts/items/weapons/legend_sling.nut";
+
+            if (::IO.fileExists(slingScript))
+            {
+                items4.equip(this.new(slingScript));
+            }
+            else
+            {
+                ::logError("[NoblePlus] onSpawnAssets: sling script not found (checked sling.nut and legend_sling.nut)");
+            }
+
             items4.addToBag(this.new("scripts/items/weapons/dagger.nut"));
-            ::logInfo("[NoblePlus] onSpawnAssets: servant sling equipped, dagger in bag");
+            local mainhand4 = items4.getItemAtSlot(this.Const.ItemSlot.Mainhand);
+            local mainhandId4 = mainhand4 != null ? mainhand4.getID() : "none";
+            ::logInfo("[NoblePlus] onSpawnAssets: servant mainhand=" + mainhandId4 + ", dagger in bag");
             ::logInfo("[NoblePlus] onSpawnAssets: bros[4] (servant) OK");
 
             // ------------------------------------------------------------------
