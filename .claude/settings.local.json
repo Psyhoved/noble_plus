@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip = [System.IO.Compression.ZipFile]::OpenRead\\(''D:\\\\SteamLibrary\\\\steamapps\\\\common\\\\Battle Brothers\\\\data\\\\mod_legends-19.1.47-russian.zip''\\); $zip.Entries | Where-Object {$_.FullName -like ''*ambition*''} | Select-Object FullName | head -20\")",
+      "Bash(7z l:*)",
+      "Bash(ls:*)",
+      "Bash(unzip:*)",
+      "Bash(python3:*)",
+      "Bash(# Ищем скрипт, который менял LLM подключение find /c/Users/Aleksander -name \"\"*.sh\"\" -o -name \"\"*.ps1\"\" -o -name \"\"*.bat\"\")",
+      "Bash(# Check if Z.AI env vars are set in shell profile grep -r \"\"ANTHROPIC_BASE_URL\\\\|ANTHROPIC_AUTH_TOKEN\\\\|Z_AI\\\\|z\\\\.ai\\\\|GLM\"\" ~/.bashrc ~/.bash_profile ~/.profile ~/.zshrc /c/Users/Aleksander/.bashrc /c/Users/Aleksander/.bash_profile)",
+      "Bash(powershell -Command \"Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip = [System.IO.Compression.ZipFile]::OpenRead\\(''D:\\\\SteamLibrary\\\\steamapps\\\\common\\\\Battle Brothers\\\\data\\\\mod_legends-19.1.47-russian.zip''\\); $zip.Entries | Where-Object {$_.FullName -like ''*ambition*''} | Select-Object FullName\")"
+    ]
+  }
+}

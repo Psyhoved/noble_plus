@@ -1,4 +1,4 @@
-# Дворянин + (Noble Plus) — мод для Battle Brothers
+# Судьба благородных (Noble Faith) — мод для Battle Brothers
 
 Мод добавляет новое происхождение **"Дворянин +"** для игры Battle Brothers (требуются Legends + MSU).
 
