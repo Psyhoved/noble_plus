@@ -29,8 +29,8 @@
 ### Шаг 1. Проверить корректный script id пращи в игре/Legends
 
 Перед правкой кода подтвердить, какой item-скрипт использовать для пращи:
-- ожидаемый кандидат: `scripts/items/weapons/sling.nut`;
-- если в установленной версии Legends используется другой путь/идентификатор — применить фактический.
+- для текущей сборки подтверждён `scripts/items/weapons/legend_northern_sling.nut`;
+- fallback-кандидаты в архивах Legends: `legend_sling.nut`, `legend_slingshot.nut`.
 
 Критерий готовности:
 - найден валидный путь к предмету пращи, который не вызывает ошибку `Cannot find script`.
@@ -44,7 +44,7 @@
 
 Рекомендуемый вид изменения:
 - было: `items4.equip(this.new("scripts/items/weapons/dagger.nut"));`
-- стало: `items4.equip(this.new("scripts/items/weapons/sling.nut"));`
+- стало: `items4.equip(this.new("scripts/items/weapons/legend_northern_sling.nut"));`
 
 ### Шаг 3. Проверить боезапас/совместимость пращи
 

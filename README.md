@@ -29,9 +29,19 @@ noble_plus/
 │   └── mod_noble_plus/   ← файлы мода (кладутся в data/ игры)
 │       ├── scripts/
 │       └── settings/
-├── docs/                 ← документация разработки
+├── docs/                 ← документация разработки (начать с docs/README.md)
+├── tools/                ← утилиты разработки/деплоя (например deploy_live_scripts.sh)
 └── README.md
 ```
+
+## Для разработчика
+
+Главный технический стандарт проекта находится в `docs/MODDING_BB_LEGENDS_GUIDE.md`.
+Режим проекта: single runtime-source (Вариант B).
+Роль реализации: Senior разработчик модов к Battle Brothers с базовым Legends.
+
+1. Разовая настройка: `./tools/setup_single_source_runtime.sh`
+2. Перед каждым тестом: `./tools/preflight_live.sh`
 
 ## Статус
 

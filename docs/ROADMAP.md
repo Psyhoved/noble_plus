@@ -4,6 +4,20 @@
 
 ---
 
+## Технический этап 0.5 — Стандарт моддинга и preflight 🔄 IN PROGRESS
+
+Цель: зафиксировать инженерный стандарт разработки под BB+Legends и исключить невалидные тесты.
+
+- Канонический документ: `docs/MODDING_BB_LEGENDS_GUIDE.md`
+- Утверждённый режим: **single runtime-source (Вариант B)** через симлинки
+  (`data/scripts/*` -> `mod/mod_noble_plus/scripts/*`)
+- One-time подготовка режима: `./tools/setup_single_source_runtime.sh`
+- Жёсткое правило: тесты без preflight не принимаются (утверждено руководителем)
+- Ограничение: поддержка старых сейвов после архитектурных изменений амбиций не требуется
+- Обязательный preflight перед тестом: `./tools/preflight_live.sh` (fail-fast)
+
+---
+
 ## Фаза 0 — Инфраструктура ✅ DONE
 
 MCP Filesystem подключён к четырём директориям. ✅
@@ -59,7 +73,7 @@ BB MCP Server написан, подключён, работает (launch_game,
 
 ### Этап 3.4 — Система амбиций Главы I 🔄 IN PROGRESS
 
-**Реализовано:** 3 кастомных амбиции + хук ванильной «Знамя отряда» + 2 хука подавления ванильных амбиций. Исправлено 3 проблемы, найденных при первом тесте в игре (сессия 7).
+**Реализовано:** config-driven архитектура амбиций + runtime-реестр + адаптер ванильной `battle_standard` + suppressor лишних амбиций + deploy-скрипт для live `data/scripts`.
 
 **Четыре амбиции Главы I:**
 
@@ -68,15 +82,18 @@ BB MCP Server написан, подключён, работает (launch_game,
 | 1.1 | «Собрать отряд» | `scripts/ambitions/ambitions/noble_plus_hire_soldiers_ambition.nut` | 8+ бойцов в ростере |
 | 1.2 | «Наполнить казну» | `scripts/ambitions/ambitions/noble_plus_earn_gold_ambition.nut` | 2000+ крон |
 | 1.3 | «Заявить о себе» | `scripts/ambitions/ambitions/noble_plus_find_allies_ambition.nut` | 500+ известности |
-| 1.4 | «Знамя отряда» | ванильная `ambition.battle_standard` + хук `hooks/ambitions/ambitions/battle_standard_ambition.nut` | 2000 крон (стандартная) |
+| 1.4 | «Знамя отряда» | ванильная `ambition.battle_standard` + адаптер `hooks/ambitions/ambitions/battle_standard_ambition.nut` | 2000 крон (ванильная механика) |
 
-**Хуки подавления ванильных амбиций (созданы в сессии 7):**
-- `hooks/ambitions/ambitions/make_nobles_aware_ambition.nut` — подавляет «Попасться на глаза знатному дому»
-- `hooks/ambitions/ambitions/allied_civilians_ambition.nut` — подавляет «Союз с поселением»
+**Ключевые файлы архитектуры этапа 3.4:**
+- `scripts/config/noble_plus_ambitions_config.nut` — source of truth (sets, conditions, rewards, texts, order)
+- `scripts/ambitions/noble_plus_ambitions_runtime.nut` — runtime-реестр и allowlist
+- `hooks/ambitions/noble_plus_vanilla_suppressor.nut` — подавление амбиций вне allowlist
+- `hooks/ambitions/ambition_manager.nut` — safety net при выборе игроком
+- `tools/deploy_live_scripts.sh` — обязательная синхронизация скриптов в live игру
 
 **Флаги состояния:** `NoblePlus.Stage.HireSoldiers.Done`, `NoblePlus.Stage.EarnGold.Done`, `NoblePlus.Stage.FindAllies.Done`, `NoblePlus.Stage.OwnBanner.Done`.
 
-**Загрузка без SQ-ошибок** ✅. Финальная верификация в игре (рассвет 2-го дня, экран выбора амбиции) — за пользователем.
+**Статус проверки:** требуется финальная in-game валидация после обязательного `./tools/deploy_live_scripts.sh`.
 
 ---
 
@@ -111,7 +128,7 @@ BB MCP Server написан, подключён, работает (launch_game,
 
 MSU Settings API для версии 1.7.2 — нужен для Этапа 3.4. Изучить другие установленные моды (например `mod_clever_recruiter`) — они используют MSU Settings и могут служить образцом.
 
-Паттерн амбиций в Legends — нужно найти и изучить перед реализацией Этапа 3.4.
+Консолидировать workflow деплоя и preflight-проверок в один исполняемый стандарт (см. `MODDING_BB_LEGENDS_GUIDE.md`).
 
 Состав ванильного стартового отряда Disowned Noble — недоступен без распаковки `.dat` файлов. Можно посмотреть в игре или найти на вики прежде чем писать `onSpawnAssets`.
 
