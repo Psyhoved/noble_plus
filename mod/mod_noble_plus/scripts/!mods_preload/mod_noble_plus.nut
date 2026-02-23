@@ -8,11 +8,18 @@
 ::NoblePlus <- {
     ID      = "mod_noble_plus",
     Version = "0.1.0",
-    Name    = "Noble Plus"
+    Name    = "Noble Plus",
+    RuntimeSchemaVersion = 1
 };
 
 // Регистрируем мод в движке — без этого он невидим для системы очередей.
 ::mods_registerMod(::NoblePlus.ID, ::NoblePlus.Version, ::NoblePlus.Name);
+
+// Загружаем конфиг и runtime-реестр амбиций заранее.
+// Это позволяет использовать их в хуках и скриптах амбиций как единый source of truth.
+::include("mod_noble_plus/scripts/config/noble_plus_ambitions_config.nut");
+::include("mod_noble_plus/scripts/ambitions/noble_plus_ambitions_runtime.nut");
+::logInfo("[NoblePlus] deploy check: preload config/runtime includes loaded");
 
 // Ставим мод в очередь загрузки.
 // Ключевое: мы грузимся ПОСЛЕ mod_msu и mod_legends.
@@ -20,6 +27,8 @@
 ::mods_queue(::NoblePlus.ID, "mod_msu, mod_legends", function()
 {
     ::NoblePlus.Mod <- ::MSU.Class.Mod(::NoblePlus.ID, ::NoblePlus.Version, ::NoblePlus.Name);
+    ::NoblePlus.Ambitions.init();
+    ::logInfo("[NoblePlus] runtime schema=" + ::NoblePlus.RuntimeSchemaVersion);
 
     // TODO: настройки отключены до исправления MSU Settings API
     // ::include("mod_noble_plus/settings/mod_settings.nut");

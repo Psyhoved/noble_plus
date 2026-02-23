@@ -59,43 +59,56 @@ this.noble_plus_find_allies_ambition <- this.inherit("scripts/ambitions/ambition
             "Пришло время выбирать союзников.";
         this.m.SuccessButtonText = "Продолжать.";
         this.m.Icon             = "ambition_renown";
+
+        if ("NoblePlus" in getroottable() && "Ambitions" in ::NoblePlus)
+        {
+            local spec = ::NoblePlus.Ambitions.getSpec(this.m.ID);
+            if (spec != null) ::NoblePlus.Ambitions.applyTexts(this, spec);
+        }
     }
 
     function onUpdateScore()
     {
-        // Активна только для нашего происхождения
         if (this.World.Assets.getOrigin().getID() != "scenario.noble_plus") return;
+        if (!("NoblePlus" in getroottable()) || !("Ambitions" in ::NoblePlus))
+        {
+            this.m.Score = 0;
+            return;
+        }
 
-        // Не показываем если уже выполнена
-        if (this.World.Flags.has("NoblePlus.Stage.FindAllies.Done")) return;
+        local id = "ambition.noble_plus.find_allies";
+        local spec = ::NoblePlus.Ambitions.getSpec(id);
+        if (spec == null || !::NoblePlus.Ambitions.isAllowed(id))
+        {
+            this.m.Score = 0;
+            return;
+        }
 
+        ::NoblePlus.Ambitions.applyTexts(this, spec);
+        local doneFlag = ::NoblePlus.Ambitions.getDoneFlag(id, "NoblePlus.Stage.FindAllies.Done");
+        if (this.World.Flags.has(doneFlag)) return;
+
+        local target = ::NoblePlus.Ambitions.getTarget(id, 500);
         local rep = this.World.Assets.getBusinessReputation();
+        this.m.Score = ::NoblePlus.Ambitions.getScore(id, 9999);
 
-        // Score 9999: амбиция всегда доминирует пул — ванильные (Score 30–90) не конкурируют
-        this.m.Score = 9999;
-
-        if (rep >= 500)
+        if (rep >= target)
         {
             this.m.IsDone = true;
-            this.World.Flags.set("NoblePlus.Stage.FindAllies.Done", true);
-            ::NoblePlus.tryFireChapterComplete(
-                ["NoblePlus.Stage.HireSoldiers.Done",
-                 "NoblePlus.Stage.EarnGold.Done",
-                 "NoblePlus.Stage.FindAllies.Done",
-                 "NoblePlus.Stage.OwnBanner.Done"],
-                "NoblePlus.Chapter1.Complete",
-                "event.noble_plus_chapter1_complete"
-            );
+            this.World.Flags.set(doneFlag, true);
+            ::NoblePlus.Ambitions.tryCompleteSet(spec.set_id);
         }
     }
 
     function getList()
     {
+        local id = "ambition.noble_plus.find_allies";
+        local target = ::NoblePlus.Ambitions.getTarget(id, 500);
         local rep = this.World.Assets.getBusinessReputation();
         return [
             {
-                text        = "Известность: " + rep + " / 500",
-                isCompleted = (rep >= 500)
+                text        = "Известность: " + rep + " / " + target,
+                isCompleted = (rep >= target)
             }
         ];
     }

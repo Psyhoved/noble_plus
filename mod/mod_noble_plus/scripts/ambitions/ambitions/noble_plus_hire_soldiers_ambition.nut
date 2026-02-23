@@ -56,43 +56,56 @@ this.noble_plus_hire_soldiers_ambition <- this.inherit("scripts/ambitions/ambiti
             "[color=#bcad8c]Теперь нужны деньги.[/color] Много денег.";
         this.m.SuccessButtonText = "Продолжать.";
         this.m.Icon             = "ambition_roster_size";
+
+        if ("NoblePlus" in getroottable() && "Ambitions" in ::NoblePlus)
+        {
+            local spec = ::NoblePlus.Ambitions.getSpec(this.m.ID);
+            if (spec != null) ::NoblePlus.Ambitions.applyTexts(this, spec);
+        }
     }
 
     function onUpdateScore()
     {
-        // Амбиция активна только для нашего происхождения
         if (this.World.Assets.getOrigin().getID() != "scenario.noble_plus") return;
+        if (!("NoblePlus" in getroottable()) || !("Ambitions" in ::NoblePlus))
+        {
+            this.m.Score = 0;
+            return;
+        }
 
-        // Не показываем если эта цель уже выполнена
-        if (this.World.Flags.has("NoblePlus.Stage.HireSoldiers.Done")) return;
+        local id = "ambition.noble_plus.hire_soldiers";
+        local spec = ::NoblePlus.Ambitions.getSpec(id);
+        if (spec == null || !::NoblePlus.Ambitions.isAllowed(id))
+        {
+            this.m.Score = 0;
+            return;
+        }
 
+        ::NoblePlus.Ambitions.applyTexts(this, spec);
+        local doneFlag = ::NoblePlus.Ambitions.getDoneFlag(id, "NoblePlus.Stage.HireSoldiers.Done");
+        if (this.World.Flags.has(doneFlag)) return;
+
+        local target = ::NoblePlus.Ambitions.getTarget(id, 8);
         local rosterSize = this.World.getPlayerRoster().getAll().len();
+        this.m.Score = ::NoblePlus.Ambitions.getScore(id, 9999);
 
-        // Score 9999: амбиция всегда доминирует пул — ванильные (Score 30–90) не конкурируют
-        this.m.Score = 9999;
-
-        if (rosterSize >= 8)
+        if (rosterSize >= target)
         {
             this.m.IsDone = true;
-            this.World.Flags.set("NoblePlus.Stage.HireSoldiers.Done", true);
-            ::NoblePlus.tryFireChapterComplete(
-                ["NoblePlus.Stage.HireSoldiers.Done",
-                 "NoblePlus.Stage.EarnGold.Done",
-                 "NoblePlus.Stage.FindAllies.Done",
-                 "NoblePlus.Stage.OwnBanner.Done"],
-                "NoblePlus.Chapter1.Complete",
-                "event.noble_plus_chapter1_complete"
-            );
+            this.World.Flags.set(doneFlag, true);
+            ::NoblePlus.Ambitions.tryCompleteSet(spec.set_id);
         }
     }
 
     function getList()
     {
+        local id = "ambition.noble_plus.hire_soldiers";
+        local target = ::NoblePlus.Ambitions.getTarget(id, 8);
         local count = this.World.getPlayerRoster().getAll().len();
         return [
             {
-                text        = "Бойцов под знаменем: " + count + " / 8",
-                isCompleted = (count >= 8)
+                text        = "Бойцов под знаменем: " + count + " / " + target,
+                isCompleted = (count >= target)
             }
         ];
     }

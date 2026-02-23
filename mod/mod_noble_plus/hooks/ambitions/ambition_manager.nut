@@ -20,10 +20,21 @@
     {
         if (this.World.Assets.getOrigin().getID() == "scenario.noble_plus")
         {
+            if (!("NoblePlus" in getroottable()) || !("Ambitions" in ::NoblePlus))
+            {
+                if (!("__AmbitionsRuntimeMissingLogged" in ::NoblePlus))
+                {
+                    ::NoblePlus.__AmbitionsRuntimeMissingLogged <- true;
+                    ::logError("[NoblePlus][Ambitions] runtime missing in ambition_manager; stale data/scripts preload likely");
+                }
+                this.setDelay(1);
+                return;
+            }
+
             local id = _ambition.getID();
 
-            // Разрешаем: наши амбиции + ambition.none (пропуск)
-            if (id != "ambition.none" && id.find("ambition.noble_plus.") != 0)
+            // Разрешаем: пропуск + амбиции из allowlist активного набора конфига.
+            if (id != "ambition.none" && !::NoblePlus.Ambitions.isAllowed(id))
             {
                 // Ванильная амбиция — отклоняем.
                 // setDelay(1) дает 1 час задержки перед следующим показом экрана.

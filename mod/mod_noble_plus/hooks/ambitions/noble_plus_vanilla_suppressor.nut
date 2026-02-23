@@ -1,19 +1,12 @@
 // =============================================================================
-// noble_plus_vanilla_suppressor — единый файл подавления ванильных амбиций
+// noble_plus_vanilla_suppressor — подавление амбиций вне allowlist
 // =============================================================================
-// Для сценария "Дворянин +" (scenario.noble_plus) все ванильные амбиции должны
-// быть исключены из пула выбора. Вместо отдельного хук-файла на каждую амбицию
-// используем один цикл: итерируем список всех известных ванильных амбиций
-// и хукаем их onUpdateScore() — ставим Score = 0 для нашего сценария.
-//
-// При обнаружении новой ванильной амбиции (например, из DLC) — достаточно
-// добавить одну строку в список vanillaAmbs ниже.
-//
-// Паттерн без closure-проблем: внутренний function(o) не ссылается на переменную
-// цикла, поэтому каждый вызов mods_hookExactClass получает корректный origUpdate.
+// Важно: enumerateFiles("scripts/ambitions/ambitions") видит только файлы из
+// data/scripts, но не все встроенные классы vanilla/DLC. Поэтому используем
+// явный список известных ambition-классов.
 
-local vanillaAmbs = [
-    // ---- Базовые ванильные амбиции (хукаются Legends, но активны для всех сценариев) ----
+local blockedClasses = [
+    // Vanilla
     "scripts/ambitions/ambitions/allied_civilians_ambition",
     "scripts/ambitions/ambitions/allied_nobles_ambition",
     "scripts/ambitions/ambitions/cart_ambition",
@@ -34,15 +27,18 @@ local vanillaAmbs = [
     "scripts/ambitions/ambitions/visit_settlements_ambition",
     "scripts/ambitions/ambitions/wagon_ambition",
     "scripts/ambitions/ambitions/weapon_mastery_ambition",
-    // ---- Кастомные амбиции Legends (тоже должны быть подавлены) ----
+    // Common DLC trade ambition aliases (Blazing Deserts)
+    "scripts/ambitions/ambitions/trade_with_southern_city_states_ambition",
+    "scripts/ambitions/ambitions/trade_with_southern_city_state_ambition",
+    "scripts/ambitions/ambitions/trade_with_southern_cities_ambition",
+    // Legends ambitions seen in pool
     "scripts/ambitions/ambitions/legend_have_all_camp_activities_ambition",
-    "scripts/ambitions/ambitions/legend_roster_of_6_ambition",
-    // ---- TODO: DLC Blazing Deserts ----
-    // Идентифицировать файл амбиции "В южных городах-государствах деньги текут рекой..."
-    // и добавить сюда. Найти через лог "never processed for hooks" после запуска теста.
+    "scripts/ambitions/ambitions/legend_roster_of_6_ambition"
 ];
 
-foreach (p in vanillaAmbs)
+local hookedCount = 0;
+
+foreach (p in blockedClasses)
 {
     ::mods_hookExactClass(p, function(o)
     {
@@ -50,12 +46,28 @@ foreach (p in vanillaAmbs)
 
         o.onUpdateScore = function()
         {
-            if (::World.Assets.getOrigin().getID() == "scenario.noble_plus")
+            origUpdate();
+
+            if (this.World.Assets.getOrigin().getID() != "scenario.noble_plus") return;
+            if (!("NoblePlus" in getroottable()) || !("Ambitions" in ::NoblePlus))
             {
+                if (!("__AmbitionsRuntimeMissingLogged" in ::NoblePlus))
+                {
+                    ::NoblePlus.__AmbitionsRuntimeMissingLogged <- true;
+                    ::logError("[NoblePlus][Ambitions] runtime missing in suppressor; stale data/scripts preload likely");
+                }
                 this.m.Score = 0;
                 return;
             }
-            origUpdate();
+
+            local id = ("ID" in this.m) ? this.m.ID : null;
+            if (id == null || !::NoblePlus.Ambitions.isAllowed(id))
+            {
+                this.m.Score = 0;
+            }
         };
     });
+    hookedCount = hookedCount + 1;
 }
+
+::logInfo("[NoblePlus][Ambitions] suppressor targets: " + hookedCount);

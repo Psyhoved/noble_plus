@@ -56,43 +56,56 @@ this.noble_plus_earn_gold_ambition <- this.inherit("scripts/ambitions/ambition",
             "[color=#bcad8c]Пришло время искать друзей.[/color]";
         this.m.SuccessButtonText = "Продолжать.";
         this.m.Icon             = "ambition_gold";
+
+        if ("NoblePlus" in getroottable() && "Ambitions" in ::NoblePlus)
+        {
+            local spec = ::NoblePlus.Ambitions.getSpec(this.m.ID);
+            if (spec != null) ::NoblePlus.Ambitions.applyTexts(this, spec);
+        }
     }
 
     function onUpdateScore()
     {
-        // Активна только для нашего происхождения
         if (this.World.Assets.getOrigin().getID() != "scenario.noble_plus") return;
+        if (!("NoblePlus" in getroottable()) || !("Ambitions" in ::NoblePlus))
+        {
+            this.m.Score = 0;
+            return;
+        }
 
-        // Не показываем если уже выполнена
-        if (this.World.Flags.has("NoblePlus.Stage.EarnGold.Done")) return;
+        local id = "ambition.noble_plus.earn_gold";
+        local spec = ::NoblePlus.Ambitions.getSpec(id);
+        if (spec == null || !::NoblePlus.Ambitions.isAllowed(id))
+        {
+            this.m.Score = 0;
+            return;
+        }
 
+        ::NoblePlus.Ambitions.applyTexts(this, spec);
+        local doneFlag = ::NoblePlus.Ambitions.getDoneFlag(id, "NoblePlus.Stage.EarnGold.Done");
+        if (this.World.Flags.has(doneFlag)) return;
+
+        local target = ::NoblePlus.Ambitions.getTarget(id, 2000);
         local gold = this.World.Assets.getMoney();
+        this.m.Score = ::NoblePlus.Ambitions.getScore(id, 9999);
 
-        // Score 9999: амбиция всегда доминирует пул — ванильные (Score 30–90) не конкурируют
-        this.m.Score = 9999;
-
-        if (gold >= 2000)
+        if (gold >= target)
         {
             this.m.IsDone = true;
-            this.World.Flags.set("NoblePlus.Stage.EarnGold.Done", true);
-            ::NoblePlus.tryFireChapterComplete(
-                ["NoblePlus.Stage.HireSoldiers.Done",
-                 "NoblePlus.Stage.EarnGold.Done",
-                 "NoblePlus.Stage.FindAllies.Done",
-                 "NoblePlus.Stage.OwnBanner.Done"],
-                "NoblePlus.Chapter1.Complete",
-                "event.noble_plus_chapter1_complete"
-            );
+            this.World.Flags.set(doneFlag, true);
+            ::NoblePlus.Ambitions.tryCompleteSet(spec.set_id);
         }
     }
 
     function getList()
     {
+        local id = "ambition.noble_plus.earn_gold";
+        local target = ::NoblePlus.Ambitions.getTarget(id, 2000);
         local gold = this.World.Assets.getMoney();
         return [
             {
-                text        = "Золото: " + gold + " / 2000",
-                isCompleted = (gold >= 2000)
+                text        = "Золото: " + gold + " / " + target,
+                isCompleted = (gold >= target)
             }
         ];
     }
