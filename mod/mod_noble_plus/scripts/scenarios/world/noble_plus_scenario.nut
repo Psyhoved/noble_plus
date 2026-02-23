@@ -27,18 +27,19 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
 
         this.m.Description =
             "[p=c][img]gfx/ui/events/event_176.png[/img][/p]" +
-            "[p]Вы — опальный дворянин, изгнанный из родового замка завистливыми " +
-            "родственниками. Всё, что у вас осталось — верный слуга, горстка монет " +
-            "и ваш родовой зверь: легендарный белый волк, с которым вы выросли и " +
-            "которого не предали даже в бегстве. Теперь вам предстоит с нуля " +
-            "вернуть себе имя, честь и замок.\n\n" +
-            "[color=#bcad8c]Родовой зверь:[/color] Дворянин начинает с легендарным " +
-            "белым волком в качестве спутника. Волк может быть выпущен в бою.\n" +
+            "[p]Ты — опальный барон Дома Локвуд. Три месяца назад твой собственный " +
+            "брат поднял меч против отца и занял родовой замок. Теперь ты носишь " +
+            "титул, который принадлежит тебе по праву рождения, но за который " +
+            "придётся платить кровью.\n\n" +
+            "[color=#bcad8c]Родовой зверь:[/color] Лютоволк — последний дар " +
+            "твоего отца. Он был с твоей семьёй поколениями и в бою идёт рядом.\n" +
             "[color=#bcad8c]Верный слуга:[/color] Старик Харлан бормочет молитвы, " +
             "швыряет камни из пращи метче многих наёмных стрелков и держит " +
             "в суме старый кинжал на случай, если мир опять подберётся вплотную.\n" +
-            "[color=#c90000]Честь дворянина:[/color] Если дворянин погибнет — " +
-            "игра окончена.[/p]";
+            "[color=#c90000]Изгнание:[/color] Брат-узурпатор объявил тебя вне " +
+            "закона. Любой, кто приютит тебя, становится его врагом.\n" +
+            "[color=#c90000]Кровная клятва:[/color] Пока ты жив — замок твой. " +
+            "Погибнешь ты — и имя Локвудов сожрут вороньё и счета кредиторов.[/p]";
     }
 
     function onInit()
@@ -161,41 +162,36 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
             // bros[4] — Слуга
             // ------------------------------------------------------------------
             bros[4].setStartValuesEx(["servant_background"], false);
-            bros[4].getBackground().m.RawDescription = "%name% пережил трёх лордов, пять осад и одну особенно скверную свадьбу, после которой от стола остались только кости и долги. Он клянётся, что в юности охотился пращой на волков, и, к удивлению всех, иногда даже попадает. Когда камни заканчиваются, в его суме всегда ждёт старый кинжал — ржавый, но честный, как сам %name%.";
+            bros[4].getBackground().m.RawDescription = "%name% пережил трёх лордов, пять осад и одну свадьбу, где жених не дожил до десерта. Он ворчит, кашляет и клянётся, что лучшие люди всегда умирают первыми, а худшие — получают титулы. Когда остальные спорят о чести, %name% молча делает работу и остаётся жив.";
             bros[4].getBackground().buildDescription(true);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Old);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Loyal);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Lucky);
             ::Legends.Traits.grant(bros[4], ::Legends.Trait.Survivor);
             this.addScenarioPerk(bros[4].getBackground(), this.Const.Perks.PerkDefs.Rotation);
+            this.addScenarioPerk(bros[4].getBackground(), this.Const.Perks.PerkDefs.BagsAndBelts);
             if (bros[4].getBaseProperties().RangedSkill <= 42)
-                bros[4].getBaseProperties().RangedSkill += 8;
+                bros[4].getBaseProperties().RangedSkill += 10;
             bros[4].setPlaceInFormation(12);
             local items4 = bros[4].getItems();
             items4.equip(this.Const.World.Common.pickArmor([[1, "linen_tunic"]]));
             items4.equip(this.Const.World.Common.pickHelmet([[1, "feathered_hat"]]));
-            items4.equip(this.new("scripts/items/supplies/legend_pudding_item"));
-            items4.addToBag(this.new("scripts/items/supplies/wine_item"));
-
-            // В некоторых сборках/версиях модов путь пращи может отличаться.
-            // Пробуем сначала ванильный script id, затем Legends-вариант.
-            local slingScript = "scripts/items/weapons/sling.nut";
-            if (!::IO.fileExists(slingScript) && ::IO.fileExists("scripts/items/weapons/legend_sling.nut"))
-                slingScript = "scripts/items/weapons/legend_sling.nut";
-
-            if (::IO.fileExists(slingScript))
-            {
-                items4.equip(this.new(slingScript));
-            }
-            else
-            {
-                ::logError("[NoblePlus] onSpawnAssets: sling script not found (checked sling.nut and legend_sling.nut)");
-            }
-
-            items4.addToBag(this.new("scripts/items/weapons/dagger.nut"));
-            local mainhand4 = items4.getItemAtSlot(this.Const.ItemSlot.Mainhand);
-            local mainhandId4 = mainhand4 != null ? mainhand4.getID() : "none";
-            ::logInfo("[NoblePlus] onSpawnAssets: servant mainhand=" + mainhandId4 + ", dagger in bag");
+            local servantDagger = this.new("scripts/items/weapons/dagger");
+            local servantNet = this.new("scripts/items/tools/legend_broken_throwing_net.nut");
+            local oldMain = items4.getItemAtSlot(this.Const.ItemSlot.Mainhand);
+            if (oldMain != null) items4.unequip(oldMain);
+            local servantSling = this.new("scripts/items/weapons/legend_northern_sling.nut");
+            if (servantSling != null) items4.equip(servantSling);
+            local servantDaggerAdded = items4.addToBag(servantDagger);
+            local servantNetAdded = items4.addToBag(servantNet);
+            local servantBagSlots = 0;
+            if ("getUnlockedBagSlots" in items4)
+                servantBagSlots = items4.getUnlockedBagSlots();
+            local servantMainhand = items4.getItemAtSlot(this.Const.ItemSlot.Mainhand);
+            local servantMainhandID = servantMainhand != null ? servantMainhand.getID() : "none";
+            ::logInfo("[NoblePlus] onSpawnAssets: servant mainhand id = " + servantMainhandID);
+            ::logInfo("[NoblePlus] onSpawnAssets: servant bag slots unlocked = " + servantBagSlots);
+            ::logInfo("[NoblePlus] onSpawnAssets: servant bag add results: dagger=" + servantDaggerAdded + ", net=" + servantNetAdded);
             ::logInfo("[NoblePlus] onSpawnAssets: bros[4] (servant) OK");
 
             // ------------------------------------------------------------------
@@ -221,6 +217,7 @@ this.noble_plus_scenario <- this.inherit("scripts/scenarios/world/starting_scena
             stash.removeByID("supplies.ground_grains");
             stash.add(this.new("scripts/items/supplies/cured_rations_item"));
             stash.add(this.new("scripts/items/supplies/wine_item"));
+            stash.add(this.new("scripts/items/supplies/legend_pudding_item"));
             stash.add(this.new("scripts/items/loot/signet_ring_item"));
             this.World.Assets.addBusinessReputation(this.m.StartingBusinessReputation);
             this.World.Assets.m.Money = this.World.Assets.m.Money * 3;
